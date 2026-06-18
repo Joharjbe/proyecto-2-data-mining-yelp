@@ -1,0 +1,29 @@
+# Datos y credenciales: nunca se versionan
+data/
+.census_key
+.env
+.env.*
+!.env.example
+
+# Entornos y cachés Python/Jupyter
+.venv-yelpdm/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Archivos del sistema/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Temporales y exportaciones locales
+tmp/
+output/
+*.log
+

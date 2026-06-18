@@ -1,0 +1,20 @@
+# Proyecto 2 Data Mining UTEC — entorno Yelp (M1 Pro / arm64)
+# Motor big data (capa bronze->silver) — requiere Java 17 (ver setup_env.sh)
+pyspark>=3.5.5,<4.0
+# Formato columnar + consultas analíticas rápidas en local
+pyarrow>=15.0
+duckdb>=1.0
+polars>=1.0
+# Núcleo numérico y manipulación (los algoritmos del curso van A MANO sobre numpy)
+numpy>=1.26
+pandas>=2.2
+# Gráficas
+matplotlib>=3.8
+# Notebooks (flujo de trabajo acordado: experimentar -> validar -> avanzar)
+jupyterlab>=4.0
+ipykernel
+# Descarga de fuentes complementarias (ACS, COVID, crosswalk)
+requests
+tqdm
+# Feriados de EE.UU. (fuente complementaria "calendario")
+holidays
