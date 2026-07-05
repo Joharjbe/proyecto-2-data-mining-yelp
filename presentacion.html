@@ -433,7 +433,7 @@ body{min-height:100%;font-family:var(--font);color:var(--ink);background:#ffffff
         </div>
         <div class="layer tech">
           <div class="lhd">★ Técnico · curso</div>
-          <p>Grafo usuario-restaurante: <b>densidad 0.011%</b>, componente gigante 100%, diámetro ≥12. <b>67%</b> de reseñas son 4–5★; las de 1★ traen <b>+60% de texto</b>.</p>
+          <p>Grafo usuario-restaurante: <b>densidad 0.011%</b>, componente gigante 100%, diámetro ≥10. <b>67%</b> de reseñas son 4–5★; las de 1★ traen <b>+54% de texto</b>.</p>
         </div>
         <div class="layer biz">
           <div class="lhd">En el negocio</div>
@@ -528,7 +528,7 @@ body{min-height:100%;font-family:var(--font);color:var(--ink);background:#ffffff
     <div class="shead">
       <div class="htext">
         <div class="kicker"><span class="dot"></span> Parte III · Clustering</div>
-        <div class="slide-title">La silueta dice k=2; el <em>codo y el negocio dicen k=6</em></div>
+        <div class="slide-title">La silueta dice k=2; el <em>codo apunta a 5–6 y elegimos k=6</em></div>
         <div class="subt">K-Means++, DBSCAN y BFR — todo a mano sobre 42 features estandarizadas.</div>
       </div>
       <div class="rubric">
@@ -542,7 +542,7 @@ body{min-height:100%;font-family:var(--font);color:var(--ink);background:#ffffff
       <div class="figcol">
         <div class="figcard">
           <div class="ftitle">Método del codo + silueta (k = 2…10)</div>
-          <div class="fsub">El codo en k=6 da 6 segmentos operativos interpretables</div>
+          <div class="fsub">El codo apunta a k=5–6 (empate); elegimos 6 por interpretabilidad</div>
           <div class="figbox"><svg id="fig-elbow"></svg></div>
         </div>
       </div>
@@ -553,7 +553,7 @@ body{min-height:100%;font-family:var(--font);color:var(--ink);background:#ffffff
         </div>
         <div class="layer tech">
           <div class="lhd">★ Técnico · curso</div>
-          <p>Barrido k=2..10. Silueta favorece k=2, pero <b>codo + interpretación eligen k=6</b> (SSE/punto 28.32). <b>DBSCAN colapsa</b> en un cluster gigante + 7.8% ruido — maldición de la dimensionalidad en 42D.</p>
+          <p>Barrido k=2..10. Silueta favorece k=2, pero <b>codo + interpretación eligen k=6</b> (SSE/punto 28.16). <b>DBSCAN colapsa</b> en un cluster gigante + 7.7% ruido — maldición de la dimensionalidad en 42D.</p>
         </div>
         <div class="layer biz">
           <div class="lhd">En el negocio</div>
@@ -889,7 +889,7 @@ body{min-height:100%;font-family:var(--font);color:var(--ink);background:#ffffff
     <div class="shead">
       <div class="htext">
         <div class="kicker"><span class="dot"></span> Parte VII · Crítica y ética</div>
-        <div class="slide-title">Lo que escala y lo que no: <em>pendiente 1.12 vs 2.27</em></div>
+        <div class="slide-title">Lo que escala y lo que no: <em>K-Means ~lineal vs DBSCAN ~cuadrático</em></div>
         <div class="subt">Y quién tiene la voz: el top 10% escribe el 54% de las reseñas.</div>
       </div>
       <div class="rubric">
@@ -903,7 +903,7 @@ body{min-height:100%;font-family:var(--font);color:var(--ink);background:#ffffff
       <div class="figcol">
         <div class="figcard">
           <div class="ftitle">Escalabilidad medida (log-log)</div>
-          <div class="fsub">K-Means ~lineal (1.12) vs vecindades DBSCAN cuadrático (2.27)</div>
+          <div class="fsub">K-Means ~lineal vs vecindades DBSCAN cuadrático</div>
           <div class="figbox"><svg id="fig-scal"></svg></div>
         </div>
       </div>
@@ -914,7 +914,7 @@ body{min-height:100%;font-family:var(--font);color:var(--ink);background:#ffffff
         </div>
         <div class="layer tech">
           <div class="lhd">★ Técnico · curso</div>
-          <p>Pendiente log-log <b>1.12</b> (asignación K-Means, ~lineal) vs <b>2.27</b> (vecindades DBSCAN, cuadrático). Concentración de voz: top 10% = <b>54.0%</b> (Gini 0.590).</p>
+          <p>Pendiente log-log <b>~lineal</b> (asignación K-Means) vs <b>~cuadrática</b> (vecindades DBSCAN); el valor exacto varía por medir microsegundos. Concentración de voz: top 10% = <b>54.0%</b> (Gini 0.590).</p>
         </div>
         <div class="layer biz">
           <div class="lhd">En el negocio</div>
@@ -1536,8 +1536,8 @@ function fig_scal(){
   drawLine(svg,[X(0),X(4)],[Y(0.5),Y(0.5+1.12*4)],C.green,3);
   // line slope 2.27 (quadratic)
   drawLine(svg,[X(0),X(3.5)],[Y(0.3),Y(0.3+2.27*3.5)],C.red,3);
-  E('text',{x:X(3.1),y:Y(0.5+1.12*3.1)+18,fill:C.green,'font-size':12,'font-weight':800,'font-family':'Poppins'},svg).textContent='K-Means · 1.12 (lineal)';
-  E('text',{x:X(2.0),y:Y(0.3+2.27*2.0)-10,fill:C.red,'font-size':12,'font-weight':800,'font-family':'Poppins'},svg).textContent='DBSCAN · 2.27 (cuadrático)';
+  E('text',{x:X(3.1),y:Y(0.5+1.12*3.1)+18,fill:C.green,'font-size':12,'font-weight':800,'font-family':'Poppins'},svg).textContent='K-Means · lineal';
+  E('text',{x:X(2.0),y:Y(0.3+2.27*2.0)-10,fill:C.red,'font-size':12,'font-weight':800,'font-family':'Poppins'},svg).textContent='DBSCAN · cuadrático';
 }
 
 /* ---- Slide 20: exposure equity ---- */

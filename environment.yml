@@ -1,0 +1,41 @@
+# =============================================================
+# Entorno Conda reproducible — Proyecto 2 Data Mining UTEC (Yelp)
+#
+# Versiones FIJADAS (==) a propósito: garantizan que todos obtengan
+# las mismas figuras (la Parte II depende de desempates en pandas/numpy).
+# Java lo trae el propio entorno (openjdk 17), así nadie instala Spark
+# ni Java por separado.
+#
+# Crear:    conda env create -f environment.yml
+# Activar:  conda activate yelp-dm
+# Kernel:   python -m ipykernel install --user --name yelp-dm \
+#                  --display-name "Python (yelp-dm)"
+# Borrar:   conda env remove -n yelp-dm
+# =============================================================
+name: yelp-dm
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - openjdk=17          # PySpark 3.5 necesita JDK (soporta 8/11/17)
+  - pip
+  - pip:
+      # --- Motor big data (capa bronze -> silver) ---
+      - pyspark==3.5.8
+      # --- Formato columnar + consultas analíticas rápidas ---
+      - pyarrow==24.0.0
+      - duckdb==1.5.4
+      - polars==1.42.1
+      # --- Núcleo numérico (algoritmos del curso van A MANO sobre numpy) ---
+      - numpy==1.26.4
+      - pandas==2.3.3
+      # --- Gráficas ---
+      - matplotlib==3.10.0
+      # --- Notebooks ---
+      - jupyterlab==4.6.1
+      - ipykernel==7.2.0
+      # --- Descarga de fuentes complementarias (ACS, COVID, crosswalk) ---
+      - requests==2.32.5
+      - tqdm==4.67.3
+      # --- Feriados de EE.UU. (fuente complementaria "calendario") ---
+      - holidays==0.99

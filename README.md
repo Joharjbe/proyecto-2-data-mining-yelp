@@ -417,7 +417,7 @@ usuarios, reseñas, check-ins y tips; calidad de datos con decisiones de tratami
 - **Grafo social global**: 52.6M de amistades, grado medio 53, densidad 2.7×10⁻⁵ — red gigante y
   dispersa: obliga a representaciones por listas (no matrices densas).
 - **Sesgos a modelar, no a borrar**: 67% de reseñas son 4–5★ (forma en J — opina quien vivió algo
-  extremo); las reseñas de 1★ traen ~60% más texto que las de 5★ (TF-IDF "entenderá" mejor los
+  extremo); las reseñas de 1★ traen ~54% más texto que las de 5★ (TF-IDF "entenderá" mejor los
   disgustos); solo 4.6% de usuarios fue Elite (etiqueta débil de influencia para validar rankings).
 - **Tres relojes temporales** (pico anual en julio; el domingo se escribe más; pico diario en la
   tarde local) + heatmap de 13.4M check-ins ardiendo en cenas y fines de semana → parámetros de
@@ -446,7 +446,7 @@ de las 7 tablas gold; medición del grafo usuario-negocio con BFS propio sobre C
 - **El grafo usuario-restaurante medido** (lo que pide la Parte I): densidad bipartita
   **1.12×10⁻⁴** (solo 0.011% de la matriz llena — el desierto que el filtrado colaborativo
   cultivará), grados medios 3.3 (usuario) vs 91.1 (restaurante), componente gigante del **100.0%**
-  (43 nodos fuera de 843k), **diámetro ≥12** y **distancia media 6.9 saltos** — un mundo pequeño
+  (43 nodos fuera de 843k), **diámetro ≥10** y **distancia media 6.9 saltos** — un mundo pequeño
   de libro: cualquier usuario está a ~7 pasos de cualquier restaurante de tres ciudades distintas.
   *(El diámetro exacto exigiría un BFS desde cada uno de los 843k nodos — inviable; usamos
   **double sweep**, la técnica estándar: BFS desde un nodo hasta su punto más lejano `u`, y desde
@@ -475,13 +475,13 @@ de las 7 tablas gold; medición del grafo usuario-negocio con BFS propio sobre C
 
 **Datos usados.** El notebook consume exclusivamente `data/gold/features_negocio.parquet` (29,314 restaurantes × 30 columnas). Después de imputación documentada, `log1p`, one-hot y estandarización quedan **42 features**: atributos de Yelp (estrellas, reseñas, precio, servicios, alcohol, wifi) y contexto externo de **Census ACS** (ingreso, población, porcentaje universitario y renta). `metro` y latitud/longitud se excluyen del entrenamiento para evitar clusters geográficos; `metro` se reserva como etiqueta externa.
 
-**Experimentación que decide los parámetros:** (1) K-Means++ barre `k=2…10`; la silueta favorece `k=2`, pero el codo y la interpretación seleccionan **k=6**. Se prueba además estabilidad en 10 semillas frente a inicialización aleatoria. (2) DBSCAN fija `minPts=10`, construye el *k-distance plot* y evalúa percentiles p70–p85; la fusión de dos clusters a uno entre p80 y p82 justifica **`eps=5.17` (p80)**. (3) BFR prueba factores DS 1.4–2.0 y elige **1.8** por la mejor silueta observada manteniendo cerca de 0.5% de outliers. Cada decisión aparece después de la tabla o gráfica que la sustenta.
+**Experimentación que decide los parámetros:** (1) K-Means++ barre `k=2…10`; la silueta favorece `k=2`, y el codo señala un **empate técnico entre `k=5` y `k=6`** (distancias 0.166 vs 0.150); la interpretabilidad decide **k=6**, como recomienda el propio método del codo. Se prueba además estabilidad en 10 semillas frente a inicialización aleatoria. (2) DBSCAN fija `minPts=10`, construye el *k-distance plot* y evalúa percentiles p70–p85; el colapso a un único cluster gigante ya en p80 fija **`eps=5.19` (p80)**, el punto que aún conserva detección de ruido. (3) BFR prueba factores DS 1.4–2.0 y elige **1.8** por la mejor silueta observada manteniendo cerca de 0.5% de outliers. Cada decisión aparece después de la tabla o gráfica que la sustenta.
 
-**Resultado principal.** K-Means++ entrega seis segmentos interpretables: servicio completo con bar/reservas; casual económico orientado a delivery; baja información/actividad; destinos consolidados; pequeños de baja tracción; y casuales bien valorados. Obtiene SSE por punto 28.32 y silueta ≈0.10: perfiles útiles, pero solapados. La silueta individual muestra que C2 es el más nítido (`s≈0.23`), mientras C0 y C4 concentran más casos fronterizos. El mosaico proporcional confirma presencia de los tres mercados en todos los segmentos; purity≈0.58 y NMI≈0.008 indican que el modelo no copia la ciudad.
+**Resultado principal.** K-Means++ entrega seis segmentos interpretables: servicio completo con bar/reservas; casual económico orientado a delivery; baja información/actividad; destinos consolidados; pequeños de baja tracción; y casuales bien valorados. Obtiene SSE por punto 28.16 y silueta ≈0.10: perfiles útiles, pero solapados. La silueta individual muestra que C2 es el más nítido (`s≈0.23`), mientras C0 y C4 concentran más casos fronterizos. El mosaico proporcional confirma presencia de los tres mercados en todos los segmentos; purity≈0.58 y NMI≈0.008 indican que el modelo no copia la ciudad.
 
 **Comparación visual común con PCA.** Para observar los tres modelos en las mismas coordenadas se implementa PCA a mano mediante covarianza y autodescomposición, siguiendo la receta de la Parte VI del enunciado y la interpretación geométrica del deck extra 13 (págs. 11 y 25–26). PCA se ajusta una vez, sin etiquetas, y solo se usa para visualizar la misma muestra de 6,000: PC1+PC2 retienen **32.4%** de la varianza. K-Means++ y BFR muestran estructuras relacionadas (65% de coincidencia tras alinear IDs arbitrarios), mientras DBSCAN conecta casi toda la nube. La selección y las métricas permanecen en 42D; el mapa no se usa para declarar ganadores.
 
-**Comparación honesta.** DBSCAN corre sobre una muestra reproducible de 6,000 por su costo O(n²): encuentra un cluster gigante, otro diminuto y 7.8% de ruido, evidencia de concentración de distancias en 42 dimensiones. BFR procesa los 29,314 casos en bloques de 4,000 y deja 0.51% de outliers; sacrifica algo de silueta a cambio de resumir DS/CS/RS y escalar sin una matriz densa. El notebook persiste 3 tablas gold y 8 figuras listas para informe.
+**Comparación honesta.** DBSCAN corre sobre una muestra reproducible de 6,000 por su costo O(n²): encuentra un único cluster gigante y 7.7% de ruido, evidencia de concentración de distancias en 42 dimensiones. BFR procesa los 29,314 casos en bloques de 4,000 y deja 0.51% de outliers; sacrifica algo de silueta a cambio de resumir DS/CS/RS y escalar sin una matriz densa. El notebook persiste 3 tablas gold y 8 figuras listas para informe.
 
 ### Notebook 07 — Parte IV: recomendación híbrida
 **Qué cubre del enunciado:** filtrado colaborativo **item-item** (Pearson + baseline + shrinkage), **content-based** TF-IDF de reseñas + categorías, **híbrido**, y evaluación **Precision@K / Recall@K / NDCG / RMSE / MAE** frente a baselines (aleatorio, top-popular). Todo a mano en `src/recommenders.py`.
@@ -515,7 +515,7 @@ de las 7 tablas gold; medición del grafo usuario-negocio con BFS propio sobre C
 
 **Experimentos.** (1) benchmark de kernels K-Means/DBSCAN y huella de memoria; (2) Gini y sensibilidad de ratings sin el top 10% de usuarios activos; (3) representación en PageRank/HITS/popularidad; (4) exposición CF vs top-popular en 1,500 usuarios; (5) campañas simuladas de reseñas de 1★/5★; (6) missingness/clusters por ingreso ZIP; (7) riesgos y transferibilidad a Lima.
 
-**Resultados.** El benchmark recupera crecimiento ≈lineal (pendiente 1.12) vs cuadrático (2.27). En el universo, el top 10% escribe 54.0% (Gini 0.590). CF expone 10,210 negocios/39.3% del catálogo con Gini 0.248, frente a 3,374/13.0% y Gini 0.358 de top-popular, pero aún asigna 51.3% de slots al Q4 visible. No hay ventaja general de cadenas: sí de atención acumulada. Cinco reseñas simuladas de 5★ mueven Q1 +0.56 estrellas vs Q4 +0.03. Los ZIPs de ingreso Q1 tienen 21.2% de atributos faltantes y mediana 25 reseñas, frente a 17.9%/38 en Q4. Se persisten 12 tablas y 6 figuras revisadas.
+**Resultados.** El benchmark recupera crecimiento ≈lineal (K-Means) vs cuadrático (DBSCAN); la pendiente log-log exacta varía entre corridas por medir microsegundos. En el universo, el top 10% escribe 54.0% (Gini 0.590). CF expone 10,210 negocios/39.3% del catálogo con Gini 0.248, frente a 3,374/13.0% y Gini 0.358 de top-popular, pero aún asigna 51.3% de slots al Q4 visible. No hay ventaja general de cadenas: sí de atención acumulada. Cinco reseñas simuladas de 5★ mueven Q1 +0.56 estrellas vs Q4 +0.03. Los ZIPs de ingreso Q1 tienen 21.2% de atributos faltantes y mediana 25 reseñas, frente a 17.9%/38 en Q4. Se persisten 12 tablas y 6 figuras revisadas.
 
 ## 8. Hallazgos principales hasta ahora
 
@@ -523,7 +523,7 @@ de las 7 tablas gold; medición del grafo usuario-negocio con BFS propio sobre C
    (Gini 0.61) — toda recomendación aprenderá de esa minoría, y lo discutiremos como problema de
    equidad.
 2. La opinión está sesgada al entusiasmo: **67% de reseñas son 4–5★**, pero la insatisfacción
-   escribe más largo (+60% de texto) — el contenido negativo es más rico para TF-IDF.
+   escribe más largo (+54% de texto) — el contenido negativo es más rico para TF-IDF.
 3. El universo elegido no es un recorte caprichoso: 3 mercados completos que concentran **56.5%**
    del fenómeno, con tres perfiles de ciudad y contexto socioeconómico contrastado (ACS).
 4. El grafo usuario-restaurante es un **mundo pequeño casi totalmente conectado** (gigante 100%,
@@ -572,8 +572,9 @@ codigo/
 ├── PLAN.md              ← bitácora interna: decisiones, cronograma, tareas
 ├── .gitignore           ← excluye datos, credenciales, entornos y cachés
 ├── .census_key.example  ← plantilla sin credenciales
-├── setup_env.sh         ← crea el entorno (ver Instalación)
-├── requirements.txt
+├── setup_env.sh         ← crea el entorno venv+pip (ver Instalación)
+├── requirements.txt     ← dependencias pip (versiones fijadas)
+├── environment.yml      ← entorno Conda equivalente (Java 17 incluido)
 ├── .census_key          ← API key personal del Census (NO se versiona)
 ├── data/                ← medallón: bronze/ silver/ gold/  (NO se versiona)
 ├── docs/                ← RUBRICA.md · arquitectura.excalidraw · 36 figuras
@@ -604,14 +605,27 @@ codigo/
 
 ## 10. Instalación y reproducción
 
-Requisitos: Mac Apple Silicon (u otro Unix), Python 3.10–3.12, JDK 17
-(`brew install --cask temurin@17`), ~25 GB de disco libres.
+Requisitos: Mac Apple Silicon (u otro Unix), Python 3.10–3.12 y ~25 GB de disco
+libres. Spark necesita JDK 17: con la **Opción A** hay que instalarlo aparte
+(`brew install --cask temurin@17`); con la **Opción B (Conda)** viene incluido en
+el propio entorno.
+
+El entorno se crea por cualquiera de estas dos vías —ambas con **versiones
+fijadas**, así todos obtienen exactamente las mismas figuras:
 
 ```bash
+# --- Opción A: venv + pip ---
 cd codigo
 bash setup_env.sh                 # detecta Python/Java, crea .venv-yelpdm, registra kernel
 source .venv-yelpdm/bin/activate
+
+# --- Opción B: Conda (Java 17 incluido, reproducible cross-platform) ---
+conda env create -f environment.yml
+conda activate yelp-dm
+python -m ipykernel install --user --name yelp-dm --display-name "Python (yelp-dm)"
 ```
+
+> **⚠️ Usa el kernel correcto.** Crear el entorno no basta: el notebook debe **usarlo**. En VSCode → *"Select Kernel"* → **`Python (yelp-dm)`** (numpy 1.26.4). Si lo corres con otro numpy (p. ej. el `base` de Anaconda, que trae numpy 2.x), los notebooks **se detienen con un mensaje claro** (candado en `src/config.py`): los resultados documentados —clustering, DBSCAN, diámetro del grafo— asumen numpy 1.26.4.
 
 1. Descargar el [Yelp Open Dataset](https://business.yelp.com/data/resources/open-dataset/)
    (aceptando su agreement) y colocar los 5 JSON en `data/bronze/`.
@@ -657,7 +671,7 @@ clase no se redistribuyen; las citas por deck/página sí quedan documentadas.
 | Informe (6–8 págs) y presentación (30 min) | — | ⏳ |
 
 **El universo en una línea:** 29,314 restaurantes · 2.67M reseñas · 813,792 usuarios ·
-2.53M amistades · matriz al 0.011% · grafo de mundo pequeño (diámetro ≥12, distancia media 6.9)
+2.53M amistades · matriz al 0.011% · grafo de mundo pequeño (diámetro ≥10, distancia media 6.9)
 · stream completo de 20.35M eventos.
 
 ## 12. Referencias

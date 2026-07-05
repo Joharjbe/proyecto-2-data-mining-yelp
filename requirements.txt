@@ -1,20 +1,25 @@
 # Proyecto 2 Data Mining UTEC — entorno Yelp (M1 Pro / arm64)
+# Versiones FIJADAS (==) para reproducibilidad: la Parte II depende de
+# desempates en pandas/numpy, así que todos deben usar las mismas versiones.
+# Equivalente pip del environment.yml (conda). NO subir numpy a 2.x: rompe
+# np.trapezoid en el notebook 03.
+#
 # Motor big data (capa bronze->silver) — requiere Java 17 (ver setup_env.sh)
-pyspark>=3.5.5,<4.0
+pyspark==3.5.8
 # Formato columnar + consultas analíticas rápidas en local
-pyarrow>=15.0
-duckdb>=1.0
-polars>=1.0
+pyarrow==24.0.0
+duckdb==1.5.4
+polars==1.42.1
 # Núcleo numérico y manipulación (los algoritmos del curso van A MANO sobre numpy)
-numpy>=1.26
-pandas>=2.2
+numpy==1.26.4
+pandas==2.3.3
 # Gráficas
-matplotlib>=3.8
+matplotlib==3.10.0
 # Notebooks (flujo de trabajo acordado: experimentar -> validar -> avanzar)
-jupyterlab>=4.0
-ipykernel
+jupyterlab==4.6.1
+ipykernel==7.2.0
 # Descarga de fuentes complementarias (ACS, COVID, crosswalk)
-requests
-tqdm
+requests==2.32.5
+tqdm==4.67.3
 # Feriados de EE.UU. (fuente complementaria "calendario")
-holidays
+holidays==0.99

@@ -27,6 +27,26 @@ YELP = {
 # Semilla global para reproducibilidad (muestreos, k-means++, etc.)
 SEED = 42
 
+# ---------------------------------------------------------------
+# Candado de reproducibilidad. Los resultados documentados (informe,
+# README, figuras) se calcularon con numpy 1.26.4 (entorno 'yelp-dm').
+# Con otra version, algunos numeros "al borde" (clustering, DBSCAN,
+# diametro del grafo, benchmarks) cambian. Cortamos con un mensaje
+# claro en vez de dar resultados distintos en silencio.
+# Para permitir otra version a proposito: export YELPDM_SKIP_VERSION_CHECK=1
+# ---------------------------------------------------------------
+import os as _os
+if not _os.environ.get("YELPDM_SKIP_VERSION_CHECK"):
+    import numpy as _np
+    if not _np.__version__.startswith("1.26"):
+        raise RuntimeError(
+            f"Entorno equivocado: numpy {_np.__version__}. Este proyecto requiere "
+            "numpy 1.26.4 (entorno 'yelp-dm'). En VSCode usa 'Select Kernel' -> "
+            "yelp-dm. Crea el entorno con: conda env create -f environment.yml  (o "
+            "pip install -r requirements.txt). Para omitir este chequeo a proposito: "
+            "export YELPDM_SKIP_VERSION_CHECK=1"
+        )
+
 def ensure_dirs() -> None:
     """Crea las carpetas del medallón si no existen."""
     for d in (BRONZE, SILVER, GOLD, EXTERNAL):
