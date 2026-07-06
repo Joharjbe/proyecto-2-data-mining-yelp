@@ -29,10 +29,11 @@ La cobertura exacta de cada criterio y su evidencia está en la
 6. [Fuentes externas y qué aporta cada una](#6-fuentes-externas-y-qué-aporta-cada-una)
 7. [Recorrido por notebooks: qué hicimos y qué encontramos](#7-recorrido-por-notebooks-qué-hicimos-y-qué-encontramos)
 8. [Hallazgos principales hasta ahora](#8-hallazgos-principales-hasta-ahora)
-9. [Estructura del repositorio](#9-estructura-del-repositorio)
-10. [Instalación y reproducción](#10-instalación-y-reproducción)
-11. [Estado / avances](#11-estado--avances)
-12. [Referencias](#12-referencias)
+9. [La demo interactiva: el Gemelo Digital Adversarial](#9-la-demo-interactiva-el-gemelo-digital-adversarial)
+10. [Estructura del repositorio](#10-estructura-del-repositorio)
+11. [Instalación y reproducción](#11-instalación-y-reproducción)
+12. [Estado / avances](#12-estado--avances)
+13. [Referencias](#13-referencias)
 
 ---
 
@@ -566,7 +567,48 @@ de las 7 tablas gold; medición del grafo usuario-negocio con BFS propio sobre C
     cadena/independiente: es atención acumulada frente a la cola larga, agravada por menor
     documentación y mayor vulnerabilidad a manipulación en negocios con pocas reseñas.
 
-## 9. Estructura del repositorio
+## 9. La demo interactiva: el Gemelo Digital Adversarial
+
+Además del informe y los notebooks, el proyecto incluye una **demo visual autocontenida** que
+convierte los resultados en una experiencia navegable. Vive en [demo/](demo/) y se titula
+**«Gemelo Digital Adversarial del Ecosistema Yelp»**: una consola de sala de control (tema oscuro,
+pensada para proyectarse en la presentación) que dramatiza los hallazgos ya verificados del
+proyecto. **Regla de honestidad:** todo lo que se ve sale *exclusivamente* de las tablas gold —
+nada se recalcula ni se inventa en el navegador.
+
+**Qué muestra**, en tres actos que recorren las siete partes:
+
+1. **El mapa (Partes II–III).** Los 29,314 restaurantes de los tres mercados dibujados como
+   constelaciones, coloreados por su segmento de K-Means++ y dimensionados por su autoridad HITS;
+   se pueden reencuadrar por precio, cluster o cuartil de ingreso ACS.
+2. **La Máquina del Tiempo (Parte V).** El latido semanal del stream de 20.35M de eventos por
+   mercado, con el contexto COVID superpuesto y los pulsos de Mardi Gras marcados sobre la misma
+   grilla temporal — el apagón pandémico y el experimento natural, visibles.
+3. **El veredicto de equidad (Partes IV y VII).** El dial de exposición (CF vs top-popular:
+   precisión contra cobertura y Gini), la lente de *redlining* (representación de cada cluster por
+   cuartil de ingreso) y la curva de Lorenz de concentración de voz, con la escena «Los que mandan»
+   — ~12 reseñadores estrella reales que son el rostro humano de esa concentración.
+
+**Cómo construirla y abrirla.** La demo es un único `index.html` sin dependencias ni servidor: se
+abre en cualquier navegador. Si necesitas regenerarla desde los datos:
+
+```bash
+python demo/export_bundle.py   # lee data/gold/ y emite demo/data/bundle.json (columnar, compacto)
+python demo/build.py           # inyecta bundle.json en app.html -> demo/index.html autocontenido
+open demo/index.html           # (o doble clic) abre la demo en el navegador
+```
+
+> **⚡ Atajo: descarga la data gold ya generada.** `export_bundle.py` necesita las tablas de
+> `data/gold/`, que normalmente se producen corriendo los notebooks 02, 04 y 05–10. Para saltarte
+> ese paso —y no tener que descargar el Yelp Open Dataset ni la key del Census— puedes descargar el
+> **`data/gold/` ya materializado** desde este enlace y descomprimirlo en `data/gold/`:
+>
+> **[📦 Data gold pre-generada (Google Drive)](https://drive.google.com/file/d/1YnEVIzwCN2Wn0OHpaBAXEOoYW104zVta/view)**
+>
+> Con esa carpeta en su sitio, `export_bundle.py` + `build.py` reconstruyen la demo directamente,
+> sin ejecutar ningún notebook preliminar.
+
+## 10. Estructura del repositorio
 
 ```
 codigo/
@@ -592,7 +634,7 @@ codigo/
 │   ├── dimensionality_reduction.py ← PCA · SVD truncada · CSR a mano
 │   ├── streaming.py     ← ventanas · Count-Min Sketch · DGIM a mano
 │   └── critical_analysis.py ← concentración · representación · stress · benchmark
-└── notebooks/
+├── notebooks/
     ├── 01_smoke_test_entorno.ipynb
     ├── 02_ingesta_bronze_a_silver.ipynb
     ├── 03_eda_global.ipynb
@@ -603,9 +645,14 @@ codigo/
     ├── 08_reduccion_dimensionalidad.ipynb
     ├── 09_streaming.ipynb
     └── 10_analisis_critico_etica.ipynb
+└── demo/                ← Gemelo Digital Adversarial: web autocontenida
+    ├── app.html         ← plantilla (placeholder __DATA__)
+    ├── export_bundle.py ← lee data/gold/ → data/bundle.json
+    ├── build.py         ← inyecta bundle.json en app.html → index.html
+    └── index.html       ← demo final autocontenida (abre en el navegador)
 ```
 
-## 10. Instalación y reproducción
+## 11. Instalación y reproducción
 
 Requisitos: Mac Apple Silicon (u otro Unix), Python 3.10–3.12 y ~25 GB de disco
 libres. Spark necesita JDK 17: con la **Opción A** hay que instalarlo aparte
@@ -643,6 +690,13 @@ python -m ipykernel install --user --name yelp-dm --display-name "Python (yelp-d
 Reproducibilidad: semilla global 42 (`src/config.py`); descargas idempotentes; los notebooks no
 dependen de estado externo más allá de las capas de datos que construye el anterior.
 
+> **⚡ Atajo (solo la demo / la capa gold).** Si únicamente quieres levantar la
+> [demo interactiva](#9-la-demo-interactiva-el-gemelo-digital-adversarial) o partir de las tablas
+> gold sin reconstruirlas, descarga el `data/gold/` ya materializado desde
+> **[este enlace de Google Drive](https://drive.google.com/file/d/1YnEVIzwCN2Wn0OHpaBAXEOoYW104zVta/view)**
+> y descomprímelo en `data/gold/`. Así evitas descargar el Yelp Open Dataset, pedir la key del
+> Census y correr los notebooks preliminares (02, 04 y 05–10) que generan esa capa.
+
 Antes de ejecutar el pipeline completo puede validarse la implementación manual con:
 
 ```bash
@@ -653,11 +707,11 @@ El repositorio público excluye deliberadamente los datos Yelp, la key del Censu
 curso y el entorno local. El dataset se obtiene bajo su acuerdo académico y los materiales de
 clase no se redistribuyen; las citas por deck/página sí quedan documentadas.
 
-## 11. Estado / avances
+## 12. Estado / avances
 
 *Actualizado: 18-jun-2026 — bitácora completa y decisiones en [PLAN.md](PLAN.md).*
 
-**Avance técnico: 7 de 7 partes completas y auditadas.** Los 10 notebooks corren de principio a fin, hay 40 salidas gold lógicas, 38 figuras y pruebas automatizadas. La siguiente prioridad académica es redactar el informe de 6–8 páginas y después preparar la presentación/demo.
+**Avance técnico: 7 de 7 partes completas y auditadas.** Los 10 notebooks corren de principio a fin, hay 40 salidas gold lógicas, 38 figuras y pruebas automatizadas. Además están listos el informe final ([reporte_final.pdf](reporte_final.pdf)), la presentación ([presentacion.html](presentacion.html)) y la [demo interactiva](#9-la-demo-interactiva-el-gemelo-digital-adversarial) autocontenida.
 
 | Parte del proyecto | Notebook | Estado |
 |---|---|---|
@@ -670,13 +724,13 @@ clase no se redistribuyen; las citas por deck/página sí quedan documentadas.
 | VI. Reducción de dimensionalidad — PCA, SVD | 08 | ✅ **Completa** |
 | VII. Análisis crítico y ético | 10 | ✅ **Completa** |
 | Repositorio reproducible y matriz de rúbrica | — | ✅ Completo |
-| Informe (6–8 págs) y presentación (30 min) | — | ⏳ |
+| Informe (6–8 págs), presentación (30 min) y demo interactiva | — | ✅ Completo |
 
 **El universo en una línea:** 29,314 restaurantes · 2.67M reseñas · 813,792 usuarios ·
 2.53M amistades · matriz al 0.011% · grafo de mundo pequeño (diámetro ≥10, distancia media 6.9)
 · stream completo de 20.35M eventos.
 
-## 12. Referencias
+## 13. Referencias
 
 - Leskovec, J., Rajaraman, A., Ullman, J. D. — *Mining of Massive Datasets* (3rd ed.),
   [mmds.org](http://www.mmds.org) — base de las diapositivas del curso (semanas 06–12 y extras).
