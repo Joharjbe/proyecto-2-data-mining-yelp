@@ -28,3 +28,6 @@ output/
 *.log
 
 PLAN.md
+
+report/
+slides/

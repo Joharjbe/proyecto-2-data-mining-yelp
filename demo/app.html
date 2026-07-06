@@ -445,7 +445,8 @@ let storySmallIdx=-1, storyBigIdx=-1;                    // objetivos del cap. a
 function pointColor(i){
   if(mode==='attack'){
     if(i===selected)return getCss('--danger');
-    return COLS.cl[i]===COLS.cl[selected] && selected>=0 ? 'rgba(255,120,150,.5)' : null;
+    if(selected<0)return getCss('--ink-2');   // sin objetivo aun: toda la ciudad visible para poder elegir
+    return COLS.cl[i]===COLS.cl[selected] ? 'rgba(255,120,150,.5)' : null;
   }
   if(mode==='redline'){
     const q=COLS.incq[i];
@@ -462,7 +463,8 @@ function pointAlpha(i){
   }
   if(mode==='attack'){
     if(i===selected)return 1;
-    return COLS.cl[i]===COLS.cl[selected]&&selected>=0 ? 0.5 : 0.10*RClog[i]+0.05;
+    if(selected<0)return 0.20+0.55*RClog[i];   // sin objetivo: ciudad claramente visible/clicable
+    return COLS.cl[i]===COLS.cl[selected] ? 0.5 : 0.10*RClog[i]+0.05;
   }
   return 0.35+0.55*RClog[i]; // redline: legible siempre
 }
