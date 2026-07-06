@@ -279,6 +279,23 @@ def popularidad(M: dict) -> np.ndarray:
     return np.bincount(M["ix"], minlength=M["n_items"]).astype(float)
 
 
+def score_switching(cf_scores, content_scores, pop_scores) -> np.ndarray:
+    """Híbrido por conmutación (switching) para el problema de cold-start.
+
+    Usa el CF si tiene señal (algún candidato con score != 0), si no el
+    content-based, y si tampoco la popularidad. A diferencia del blend ponderado,
+    NO degrada a los usuarios *warm* (donde el CF sí habla, switching == CF) y a la
+    vez da un fallback razonado cuando el CF no puede rankear (usuario o ítem nuevo).
+    """
+    cf = np.asarray(cf_scores, dtype=float)
+    if np.any(cf != 0):
+        return cf
+    content = np.asarray(content_scores, dtype=float)
+    if np.any(content != 0):
+        return content
+    return np.asarray(pop_scores, dtype=float)
+
+
 # ===========================================================================
 #  Paso 6 — Métricas de evaluación (a mano)
 #  RMSE / MAE: deck 09 pág. 43 · deck 10 págs. 4-6.

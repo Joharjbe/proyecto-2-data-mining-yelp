@@ -533,8 +533,13 @@ def caracterizar(neg, labels, ei, ej, ew=None, min_size: int = 3):
         if len(miembros) < min_size:
             continue
         intra = (labels[ei] == c) & (labels[ej] == c)
+        inter = (labels[ei] == c) ^ (labels[ej] == c)   # XOR: exactamente un extremo en c
+        n_int, n_ext = int(intra.sum()), int(inter.sum())
         size = len(miembros)
-        dens = intra.sum() / (size * (size - 1) / 2) if size > 1 else 0.0
+        dens = n_int / (size * (size - 1) / 2) if size > 1 else 0.0
+        # Conductancia = aristas que salen / volumen (suma de grados) de la comunidad;
+        # baja => micro-mercado cohesivo y aislado (deck 12: conexiones inter-comunidad).
+        conductancia = n_ext / (2 * n_int + n_ext) if (2 * n_int + n_ext) > 0 else 0.0
         sub = neg.iloc[miembros]
         cats = (sub["categories"].explode()
                 .loc[lambda s: ~s.isin(["Restaurants", "Food"])]
@@ -542,10 +547,35 @@ def caracterizar(neg, labels, ei, ej, ew=None, min_size: int = 3):
         ejemplos = sub.nlargest(3, "review_count")["name"].tolist()
         filas.append({"comunidad": c, "tamaño": size,
                       "densidad_interna": round(float(dens), 2),
+                      "aristas_internas": n_int,
+                      "aristas_externas": n_ext,
+                      "conductancia": round(float(conductancia), 2),
                       "estrellas_media": round(float(sub["stars"].mean()), 2),
                       "categorías_top": ", ".join(cats),
                       "ejemplos": " · ".join(ejemplos)})
     return pd.DataFrame(filas).sort_values("tamaño", ascending=False)
+
+
+def matriz_intercomunidad(labels, ei, ej, min_size: int = 4) -> pd.DataFrame:
+    """Matriz comunidad×comunidad de conteo de aristas (deck 12: conexiones
+    inter-comunidad). La diagonal son las aristas internas de cada comunidad;
+    fuera de la diagonal, los puentes de clientela compartida entre micro-mercados.
+    Solo incluye comunidades con al menos ``min_size`` miembros (las grandes)."""
+    labels = np.asarray(labels)
+    cu, sz = np.unique(labels, return_counts=True)
+    grandes = cu[sz >= min_size]
+    remap = -np.ones(int(labels.max()) + 1, dtype=np.int64)
+    remap[grandes] = np.arange(len(grandes))
+    ca, cb = remap[labels[ei]], remap[labels[ej]]
+    mask = (ca >= 0) & (cb >= 0)          # ambos extremos en comunidades grandes
+    ca, cb = ca[mask], cb[mask]
+    k = len(grandes)
+    M = np.zeros((k, k), dtype=np.int64)
+    np.add.at(M, (ca, cb), 1)
+    np.add.at(M, (cb, ca), 1)             # simetriza; la diagonal queda doblada
+    np.fill_diagonal(M, np.diag(M) // 2)  # deshace el doble conteo de las internas
+    etiquetas = [f"C{int(c)}" for c in grandes]
+    return pd.DataFrame(M, index=etiquetas, columns=etiquetas)
 
 
 def layout_resorte(ei, ej, n, iters: int = 250, seed: int = 42) -> np.ndarray:

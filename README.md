@@ -97,7 +97,7 @@ de *nuestro* dataset para que se vea el tamaño real del problema:
 |---|---|---|
 | DBSCAN sin índice espacial (III) | O(n²) | comparar 150,346 negocios todos contra todos = 2.3×10¹⁰ distancias; la matriz de distancias en float32 ocuparía **~90 GB de RAM** (una laptop tiene 16–32) |
 | CURE / jerárquico aglomerativo (III) | ~O(n² log n) | mismo muro de memoria, más el costo de mantener la jerarquía |
-| Girvan-Newman (II) | O(m²n) | con el grafo social completo (52.6M aristas, 2M nodos) el conteo de operaciones da ~10²⁰ — **siglos de cómputo**. Como se vio en clase (semana 12 — Detección de Comunidades), su costo computacional es exactamente la limitación que motiva alternativas como la modularidad |
+| Girvan-Newman (II) | O(m²n) | con el grafo social completo (52.6M aristas, 2M nodos) el conteo de operaciones da ~10²¹ — **siglos de cómputo**. Como se vio en clase (semana 12 — Detección de Comunidades), su costo computacional es exactamente la limitación que motiva alternativas como la modularidad |
 
 La conclusión no es "usemos menos datos porque es difícil", sino la que enseña el curso: **cada
 algoritmo tiene una escala donde se aplica correctamente**. Para estudiar estas técnicas *de
@@ -206,7 +206,7 @@ Los notebooks orquestan, experimentan y validan; los módulos de `src/` contiene
 reutilizable; los algoritmos del curso van a mano sobre numpy y consumen exclusivamente gold.
 
 **Por qué Spark + Parquet (con nuestros números, no de catálogo):** convertir los 8.7 GB de JSON
-a Parquet tipado tomó **64 segundos** en un M1 Pro con Spark local (los 10 cores en paralelo) y
+a Parquet tipado tomó **menos de dos minutos** en un M1 Pro con Spark local (los 10 cores en paralelo) y
 dejó 6 GB columnares. La compresión es selectiva — `business` cayó 114→21 MB (−82%) pero `review`
 apenas (el texto libre no comprime) — y esa observación dictó una regla de diseño: las tablas gold
 llevan **solo las columnas que cada análisis usa**, porque Parquet lee por columna. Spark queda
@@ -340,11 +340,11 @@ Consumo por parte del proyecto: **II** grafos ← g4, g5 (+g3 para interpretar) 
 ← g6 · **IV** recomendación ← g5, g2 (texto) · **V** streams ← g7 (+COVID/feriados) ·
 **VI** PCA/SVD ← g6, g2 (TF-IDF) · **VII** ética/escalabilidad ← resultados y riesgos de I–VI.
 
-**Salidas de la Parte II (nuevas tablas gold + figuras):** `ranking_usuarios` (PageRank social + HITS hub por usuario), `ranking_negocios` (PageRank bipartito + HITS authority por negocio) y `comunidades_coresena_philadelphia` (restaurante → comunidad); figuras del informe en `docs/figs/parte2_*` (popularidad vs autoridad, usuarios influyentes, micro-mercados y la **red de co-reseña** nodos/aristas coloreada por comunidad y dimensionada por PageRank).
+**Salidas de la Parte II (nuevas tablas gold + figuras):** `ranking_usuarios` (PageRank social + HITS hub por usuario), `ranking_negocios` (PageRank bipartito + HITS authority por negocio) y `comunidades_coresena_philadelphia` (restaurante → comunidad); figuras del informe en `docs/figs/parte2_*` (popularidad vs autoridad, usuarios influyentes, micro-mercados, la **red de co-reseña** nodos/aristas coloreada por comunidad y dimensionada por PageRank, y la **matriz de mezcla inter-comunidad** que cuantifica los puentes de clientela entre micro-mercados).
 
 **Salidas de la Parte III:** `clusters_negocio` (etiquetas y segmento interpretable por restaurante), `perfiles_clusters_kmeans` (6 perfiles) y `comparativa_clustering` (métricas de K-Means++, DBSCAN y BFR). Las 8 figuras `docs/figs/parte3_*` cubren selección de parámetros, perfiles, silueta individual, mezcla de mercados, progreso BFR, proyección PCA común y comparación final.
 
-**Salidas de la Parte IV:** `metricas_recomendacion` (P@K/R@K/NDCG/RMSE/MAE + cobertura/novedad), `curva_hibrido_validacion` (selección de α sin mirar test), `comparativa_score_cf_validacion` (rating predicho vs suma de similitudes) y `recomendaciones_ejemplo` (top-5 explicable por usuario); 6 figuras `docs/figs/parte4_*` (comparativa con IC, frontera precisión-diversidad, curva del híbrido, diseño temporal/cohortes, ajuste del score y **mapa explicativo de una recomendación**).
+**Salidas de la Parte IV:** `metricas_recomendacion` (P@K/R@K/NDCG/RMSE/MAE + cobertura/novedad), `curva_hibrido_validacion` (selección de α sin mirar test), `comparativa_score_cf_validacion` (rating predicho vs suma de similitudes) y `recomendaciones_ejemplo` (top-5 explicable por usuario); 7 figuras `docs/figs/parte4_*` (comparativa con IC, frontera precisión-diversidad, curva del híbrido, diseño temporal/cohortes, ajuste del score, **mapa explicativo de una recomendación** y **diagnóstico de cold-start**).
 
 **Salidas de la Parte V:** `ventanas_stream`, `metricas_cms`, `frecuencias_cms_top`, `evaluacion_dgim`, `actividad_covid_semanal` e `impacto_mardi_gras`. Las 6 figuras `docs/figs/parte5_*` cubren respuesta de ventanas, error/memoria y heavy hitters de CMS, aproximación DGIM, impacto COVID y el experimento natural de Mardi Gras.
 
@@ -395,7 +395,7 @@ que Spark lea 5 GB dos veces para inferir tipos) y limpiezas documentadas: fecha
 `friends`→array, corrección del bug histórico `"20,20"`≡2020 en Elite, check-ins explotados a
 1 fila/evento, `categories`→array, columnas derivadas `metro` y `es_restaurante`. Verifica
 integridad y compara los 11 mercados.
-**Resultados clave:** ingesta completa en **64 s**; conteos idénticos a los oficiales; **0
+**Resultados clave:** ingesta completa en **menos de dos minutos**; conteos idénticos a los oficiales; **0
 duplicados y 0 reseñas huérfanas** (identidades curadas de origen); rango temporal 16-feb-2005 →
 19-ene-2022 — el "desplome" de 2022 en cualquier serie anual es **artefacto de corte** (19 días),
 mientras el valle real es 2020: −39% vs 2019. **Decisión tomada aquí:** los 3 mercados del
@@ -430,7 +430,7 @@ usuarios, reseñas, check-ins y tips; calidad de datos con decisiones de tratami
 **Qué hace:** descarga idempotente de externos + EDA propio de cada fuente (sección 6); análisis
 de sensibilidad del filtro; parseo de atributos (`ast.literal_eval` para booleanos, strings
 `u'...'` y diccionarios-en-texto; umbral de cobertura ≥30% para no imputar de más); construcción
-de las 7 tablas gold; medición del grafo usuario-negocio con BFS propio sobre CSR (numpy).
+de las 7 tablas gold; medición del grafo usuario-negocio con BFS propio sobre CSR (numpy); y correlaciones (Spearman) entre las features como cierre del EDA de la Parte I.
 **Resultados clave:**
 - **Sensibilidad que blinda el universo**: `Restaurants` = 29,314 negocios / 2,671,060 reseñas
   (91.1 por local). El bloque `Food sin Restaurants` (6,746) promedia 30.8 y sus categorías top
@@ -468,20 +468,20 @@ de las 7 tablas gold; medición del grafo usuario-negocio con BFS propio sobre C
 
 **Paso 4 — Comunidades** (Girvan-Newman + Q vs greedy CNM, sobre el grafo de co-reseña de restaurantes de Philadelphia).
 
-*Hallazgo metodológico (iteración con evidencia).* Definir la arista por **nº de co-reseñadores en común** produjo un grafo **casi completo** (top-150 con ≥15 comunes → grado medio 134, 10,052 aristas) y **modularidad Q≈0**: no aparecen comunidades porque el conteo crudo **confunde co-reseña con popularidad** —dos restaurantes con miles de reseñas comparten clientela solo por su tamaño—. La corrección es normalizar por tamaño con el **índice de Jaccard**, común/(reseñas_i+reseñas_j−común), que mide el solapamiento *real* de público. Con Jaccard el grafo se vuelve disperso (grado medio ≈8) y deja ver micro-mercados interpretables (ya asomaba el clúster de cheesesteaks/tradicional: Reading Terminal, Pat's, Geno's). Con Jaccard (grado ≈8) emergen micro-mercados claros y, comparando métodos por la misma Q, **el greedy/CNM gana** (Q=0.396, 33 comunidades) sobre Girvan-Newman (Q=0.294): las 4 comunidades grandes segmentan el *dining* de Philadelphia por estilo y precio —clásicos icónicos (Reading Terminal, Pat's, Geno's), alta cocina de autor (Morimoto, Amada), trendy de gama alta (Zahav, Barbuzzo, ★4.23) y casual de barrio (Monk's, Sabrina's)— **no por popularidad**.
+*Hallazgo metodológico (iteración con evidencia).* Definir la arista por **nº de co-reseñadores en común** produjo un grafo **casi completo** (top-150 con ≥15 comunes → grado medio 134, 10,052 aristas) y **modularidad Q≈0**: no aparecen comunidades porque el conteo crudo **confunde co-reseña con popularidad** —dos restaurantes con miles de reseñas comparten clientela solo por su tamaño—. La corrección es normalizar por tamaño con el **índice de Jaccard**, común/(reseñas_i+reseñas_j−común), que mide el solapamiento *real* de público. Con Jaccard el grafo se vuelve disperso (grado medio ≈8) y deja ver micro-mercados interpretables (ya asomaba el clúster de cheesesteaks/tradicional: Reading Terminal, Pat's, Geno's). Con Jaccard (grado ≈8) emergen micro-mercados claros y, comparando métodos por la misma Q, **el greedy/CNM gana** (Q=0.396, 33 comunidades) sobre Girvan-Newman (Q=0.294): las 4 comunidades grandes segmentan el *dining* de Philadelphia por estilo y precio —clásicos icónicos (Reading Terminal, Pat's, Geno's), alta cocina de autor (Morimoto, Amada), trendy de gama alta (Zahav, Barbuzzo, ★4.23) y casual de barrio (Monk's, Sabrina's)— **no por popularidad**. Cerrando el ítem de *conexiones inter-comunidad* del enunciado, las columnas `aristas_externas`/`conductancia` y la **matriz de mezcla comunidad×comunidad** revelan un matiz que la Q global escondía: tres micro-mercados son cohesivos (conductancia 0.22–0.30) pero el de **alta cocina de autor es un puente** (conductancia 0.58 — más aristas hacia el casual y lo trendy, 70 y 46, que hacia sí mismo, 44), mientras el turístico (Reading Terminal, Pat's, Geno's) es el más aislado; la clientela cruza sobre todo entre los segmentos de gama media-alta.
 
 ### Notebook 06 — Parte III: clustering de restaurantes
 **Qué cubre del enunciado:** K-Means++ y dos alternativas del curso (DBSCAN y BFR), selección de parámetros, comparación con SSE/silueta/purity/NMI y caracterización de clusters. Todo está implementado a mano en `src/clustering.py`, con validaciones pequeñas antes de correr Yelp.
 
 **Datos usados.** El notebook consume exclusivamente `data/gold/features_negocio.parquet` (29,314 restaurantes × 30 columnas). Después de imputación documentada, `log1p`, one-hot y estandarización quedan **42 features**: atributos de Yelp (estrellas, reseñas, precio, servicios, alcohol, wifi) y contexto externo de **Census ACS** (ingreso, población, porcentaje universitario y renta). `metro` y latitud/longitud se excluyen del entrenamiento para evitar clusters geográficos; `metro` se reserva como etiqueta externa.
 
-**Experimentación que decide los parámetros:** (1) K-Means++ barre `k=2…10`; la silueta favorece `k=2`, y el codo señala un **empate técnico entre `k=5` y `k=6`** (distancias 0.166 vs 0.150); la interpretabilidad decide **k=6**, como recomienda el propio método del codo. Se prueba además estabilidad en 10 semillas frente a inicialización aleatoria. (2) DBSCAN fija `minPts=10`, construye el *k-distance plot* y evalúa percentiles p70–p85; el colapso a un único cluster gigante ya en p80 fija **`eps=5.19` (p80)**, el punto que aún conserva detección de ruido. (3) BFR prueba factores DS 1.4–2.0 y elige **1.8** por la mejor silueta observada manteniendo cerca de 0.5% de outliers. Cada decisión aparece después de la tabla o gráfica que la sustenta.
+**Experimentación que decide los parámetros:** (1) K-Means++ barre `k=2…10`; la silueta favorece `k=2`, y el codo señala un **empate técnico entre `k=5` y `k=6`** (distancias 0.166 vs 0.150); la interpretabilidad decide **k=6**, como recomienda el propio método del codo. Se prueba además estabilidad en 10 semillas frente a inicialización aleatoria. (2) DBSCAN fija `minPts=10`, construye el *k-distance plot* y evalúa percentiles p70–p85; el colapso a un único cluster gigante ya en p80 fija **`eps=5.19` (p80)**, el punto que aún conserva detección de ruido. (3) BFR prueba factores DS 1.4–2.0 y elige **1.8** por la mejor silueta observada manteniendo cerca de 0.75% de outliers. Cada decisión aparece después de la tabla o gráfica que la sustenta.
 
-**Resultado principal.** K-Means++ entrega seis segmentos interpretables: servicio completo con bar/reservas; casual económico orientado a delivery; baja información/actividad; destinos consolidados; pequeños de baja tracción; y casuales bien valorados. Obtiene SSE por punto 28.16 y silueta ≈0.10: perfiles útiles, pero solapados. La silueta individual muestra que C2 es el más nítido (`s≈0.23`), mientras C0 y C4 concentran más casos fronterizos. El mosaico proporcional confirma presencia de los tres mercados en todos los segmentos; purity≈0.58 y NMI≈0.008 indican que el modelo no copia la ciudad.
+**Resultado principal.** K-Means++ entrega seis segmentos interpretables: servicio completo con bar/reservas; casual económico orientado a delivery; baja información/actividad; destinos consolidados; pequeños de baja tracción; y casuales bien valorados. Obtiene SSE por punto 28.16 y silueta ≈0.10: perfiles útiles, pero solapados. La silueta individual muestra que el segmento más nítido alcanza `s≈0.23` sin asignaciones negativas, mientras otro concentra ~36% de casos fronterizos. El mosaico proporcional confirma presencia de los tres mercados en todos los segmentos; purity≈0.58 y NMI≈0.007 indican que el modelo no copia la ciudad.
 
 **Comparación visual común con PCA.** Para observar los tres modelos en las mismas coordenadas se implementa PCA a mano mediante covarianza y autodescomposición, siguiendo la receta de la Parte VI del enunciado y la interpretación geométrica del deck extra 13 (págs. 11 y 25–26). PCA se ajusta una vez, sin etiquetas, y solo se usa para visualizar la misma muestra de 6,000: PC1+PC2 retienen **32.4%** de la varianza. K-Means++ y BFR muestran estructuras relacionadas (65% de coincidencia tras alinear IDs arbitrarios), mientras DBSCAN conecta casi toda la nube. La selección y las métricas permanecen en 42D; el mapa no se usa para declarar ganadores.
 
-**Comparación honesta.** DBSCAN corre sobre una muestra reproducible de 6,000 por su costo O(n²): encuentra un único cluster gigante y 7.7% de ruido, evidencia de concentración de distancias en 42 dimensiones. BFR procesa los 29,314 casos en bloques de 4,000 y deja 0.51% de outliers; sacrifica algo de silueta a cambio de resumir DS/CS/RS y escalar sin una matriz densa. El notebook persiste 3 tablas gold y 8 figuras listas para informe.
+**Comparación honesta.** DBSCAN corre sobre una muestra reproducible de 6,000 por su costo O(n²): encuentra un único cluster gigante y 7.7% de ruido, evidencia de concentración de distancias en 42 dimensiones. BFR procesa los 29,314 casos en bloques de 4,000 y deja 0.75% de outliers; sacrifica algo de silueta a cambio de resumir DS/CS/RS y escalar sin una matriz densa. El notebook persiste 3 tablas gold y 8 figuras listas para informe.
 
 ### Notebook 07 — Parte IV: recomendación híbrida
 **Qué cubre del enunciado:** filtrado colaborativo **item-item** (Pearson + baseline + shrinkage), **content-based** TF-IDF de reseñas + categorías, **híbrido**, y evaluación **Precision@K / Recall@K / NDCG / RMSE / MAE** frente a baselines (aleatorio, top-popular). Todo a mano en `src/recommenders.py`.
@@ -490,7 +490,7 @@ de las 7 tablas gold; medición del grafo usuario-negocio con BFS propio sobre C
 
 **Diseño sin fuga.** Split **temporal** (train ≤2018 · val 2019 · test 2020-21): se calibra en validación y el test se evalúa una sola vez. El ACS se excluye del recomendador y se reserva para la auditoría de equidad (VII). Los candidatos de ranking son *in-market* (el 94.8% de las visitas warm ocurren en el mercado habitual del usuario).
 
-**Resultados.** La validación 2019 elige **α=1**: para usuarios *warm*, añadir contenido no mejora al CF y el modelo seleccionado coincide con CF puro. El blend 50/50 se conserva como ablación, no como modelo elegido. En test, el **CF item-item gana** (NDCG@10 ≈ 0.49, IC bootstrap sin solaparse) sobre top-popular (0.26), content (0.20) y la ablación híbrida (0.25), **y además es diverso** (cobertura 39%); top-popular cubre solo 13%. En *rating*, el baseline regularizado gana (RMSE 1.24 vs CF 1.30). Ajuste clave: para ranking se usa **suma de similitudes**, no rating predicho (NDCG de validación 0.21→0.50).
+**Resultados.** La validación 2019 elige un **híbrido equilibrado (α≈0.5)**: combinar CF y contenido supera a cualquiera de los dos puros. En test, con **candidatos barajados** (evaluación honesta, sin premiar el orden posición-primero), el **top-popular es el más preciso** (NDCG@10 ≈ 0.26, IC bootstrap) por delante del híbrido α=.5 (0.24), content (0.19) y CF (0.18) — pero es el que **peor reparte la exposición** (cobertura 13%), mientras el **CF triplica la cobertura (40%)** a costa de precisión: la tensión precisión/diversidad que alimenta la Parte VII. En *rating*, el baseline regularizado gana (RMSE 1.24 vs CF 1.31). Nota metodológica: con candidatos barajados, rankear por **suma de similitudes** ya no supera a rankear por rating predicho (NDCG de validación 0.18 vs 0.21).
 
 ### Notebook 08 — Parte VI: PCA y SVD truncada
 **Qué cubre del enunciado:** PCA formal sobre features estandarizadas —covarianza, autovalores, umbral de 90%, loadings y proyecciones 2D/3D— y SVD truncada sobre TF-IDF —factores latentes, reconstrucción y compresión—. Todo está implementado en `src/dimensionality_reduction.py` con NumPy y CSR propio; no se usa SciPy ni scikit-learn.
@@ -515,7 +515,7 @@ de las 7 tablas gold; medición del grafo usuario-negocio con BFS propio sobre C
 
 **Experimentos.** (1) benchmark de kernels K-Means/DBSCAN y huella de memoria; (2) Gini y sensibilidad de ratings sin el top 10% de usuarios activos; (3) representación en PageRank/HITS/popularidad; (4) exposición CF vs top-popular en 1,500 usuarios; (5) campañas simuladas de reseñas de 1★/5★; (6) missingness/clusters por ingreso ZIP; (7) riesgos y transferibilidad a Lima.
 
-**Resultados.** El benchmark recupera crecimiento ≈lineal (K-Means) vs cuadrático (DBSCAN); la pendiente log-log exacta varía entre corridas por medir microsegundos. En el universo, el top 10% escribe 54.0% (Gini 0.590). CF expone 10,210 negocios/39.3% del catálogo con Gini 0.248, frente a 3,374/13.0% y Gini 0.358 de top-popular, pero aún asigna 51.3% de slots al Q4 visible. No hay ventaja general de cadenas: sí de atención acumulada. Cinco reseñas simuladas de 5★ mueven Q1 +0.56 estrellas vs Q4 +0.03. Los ZIPs de ingreso Q1 tienen 21.2% de atributos faltantes y mediana 25 reseñas, frente a 17.9%/38 en Q4. Se persisten 12 tablas y 6 figuras revisadas.
+**Resultados.** El benchmark recupera crecimiento ≈lineal (K-Means) vs cuadrático (DBSCAN); la pendiente log-log exacta varía entre corridas por medir microsegundos. En el universo, el top 10% escribe 54.0% (Gini 0.590). CF expone 10,402 negocios/40.1% del catálogo con Gini 0.239, frente a 3,376/13.0% y Gini 0.358 del top-popular (más preciso pero mucho más concentrado), y aún asigna ~49% de slots al Q4 visible. No hay ventaja general de cadenas: sí de atención acumulada. Cinco reseñas simuladas de 5★ mueven Q1 +0.56 estrellas vs Q4 +0.03. Los ZIPs de ingreso Q1 tienen 21.2% de atributos faltantes y mediana 25 reseñas, frente a 17.9%/38 en Q4. Se persisten 12 tablas y 6 figuras revisadas.
 
 ## 8. Hallazgos principales hasta ahora
 
@@ -535,18 +535,20 @@ de las 7 tablas gold; medición del grafo usuario-negocio con BFS propio sobre C
    popularidad (corr. 0.99 con nº de reseñas), pero HITS reordena: las *authorities* son restaurantes
    avalados por reseñadores Elite de Philadelphia, no los gigantes turísticos de New Orleans (solo
    2/15 coinciden). Y las comunidades de co-reseña (Jaccard) segmentan el dining por estilo/precio,
-   no por volumen.
+   no por volumen; la conductancia por comunidad muestra además que la alta cocina de autor es un
+   *puente* entre segmentos (más aristas fuera que dentro), no un micro-mercado aislado.
 7. **Los restaurantes forman perfiles operativos, no fronteras rígidas (Parte III).** K-Means++
    identifica seis segmentos por servicio, tracción y contexto ACS; la silueta ≈0.10 y su
    distribución por cluster muestran solapamiento real. DBSCAN colapsa en un cluster gigante en
    42 dimensiones, mientras BFR conserva seis grupos procesando el universo por bloques. El NMI
-   con mercado ≈0.008 confirma que los segmentos no son ciudades disfrazadas.
+   con mercado ≈0.007 confirma que los segmentos no son ciudades disfrazadas.
 
-8. **El mejor recomendador es el CF item-item, y la precisión sola engaña (Parte IV).** Con evaluación
-   temporal sin fuga, el CF item-item lidera el ranking (NDCG@10 0.49) manteniendo alta cobertura,
-   mientras el baseline top-popular —segundo en precisión— solo cubre el 13% del catálogo (sesgo de
-   popularidad). La cobertura, la novedad y los intervalos bootstrap son los que revelan ese contraste —
-   insumo directo de la discusión de equidad/exposición de la Parte VII.
+8. **La precisión sola engaña: el más preciso es el que peor diversifica (Parte IV).** Con evaluación
+   temporal sin fuga y candidatos barajados, el baseline **top-popular es el más preciso** (NDCG@10 0.26)
+   pero solo cubre el 13% del catálogo; el **CF triplica la cobertura (40%)** cediendo precisión (0.18), y
+   la validación elige un **híbrido equilibrado (α≈0.5)** que supera a ambos puros. La cobertura, la novedad
+   y los intervalos bootstrap revelan ese contraste — insumo directo de la discusión de equidad/exposición
+   de la Parte VII.
 
 9. **Reducir dimensiones ilumina, pero también borra (Parte VI).** PCA necesita 25/42 ejes para
    conservar 90%: los mapas 2D son útiles, pero omiten 67.6% de la varianza. En texto, 80 factores
@@ -560,7 +562,7 @@ de las 7 tablas gold; medición del grafo usuario-negocio con BFS propio sobre C
 
 11. **La personalización distribuye mejor la exposición, pero no borra la historia (Parte VII).**
     CF triplica la cobertura frente a top-popular y reduce su Gini de exposición, pero el cuartil
-    más visible aún recibe 51.3% de los slots. La inequidad relevante no es simplemente
+    más visible aún recibe ~49% de sus slots. La inequidad relevante no es simplemente
     cadena/independiente: es atención acumulada frente a la cola larga, agravada por menor
     documentación y mayor vulnerabilidad a manipulación en negocios con pocas reseñas.
 
@@ -577,7 +579,7 @@ codigo/
 ├── environment.yml      ← entorno Conda equivalente (Java 17 incluido)
 ├── .census_key          ← API key personal del Census (NO se versiona)
 ├── data/                ← medallón: bronze/ silver/ gold/  (NO se versiona)
-├── docs/                ← RUBRICA.md · arquitectura.excalidraw · 36 figuras
+├── docs/                ← RUBRICA.md · arquitectura.excalidraw · 38 figuras
 ├── tests/               ← pruebas de algoritmos y casos límite
 ├── src/
 │   ├── config.py        ← rutas, semilla, SparkSession, mapeo estado→metro
@@ -655,7 +657,7 @@ clase no se redistribuyen; las citas por deck/página sí quedan documentadas.
 
 *Actualizado: 18-jun-2026 — bitácora completa y decisiones en [PLAN.md](PLAN.md).*
 
-**Avance técnico: 7 de 7 partes completas y auditadas.** Los 10 notebooks corren de principio a fin, hay 40 salidas gold lógicas, 36 figuras y pruebas automatizadas. La siguiente prioridad académica es redactar el informe de 6–8 páginas y después preparar la presentación/demo.
+**Avance técnico: 7 de 7 partes completas y auditadas.** Los 10 notebooks corren de principio a fin, hay 40 salidas gold lógicas, 38 figuras y pruebas automatizadas. La siguiente prioridad académica es redactar el informe de 6–8 páginas y después preparar la presentación/demo.
 
 | Parte del proyecto | Notebook | Estado |
 |---|---|---|

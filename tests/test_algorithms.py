@@ -35,6 +35,17 @@ class GraphTests(unittest.TestCase):
         result = graphs.spearman([1, 1, 2], [1, 2, 3])
         self.assertAlmostEqual(result, np.sqrt(3) / 2)
 
+    def test_intercommunity_matrix(self):
+        # Comunidades {0,1} y {2,3}: 1 arista interna en cada una + 1 puente 1-2.
+        ei = np.array([0, 2, 1])
+        ej = np.array([1, 3, 2])
+        labels = np.array([0, 0, 1, 1])
+        mezcla = graphs.matriz_intercomunidad(labels, ei, ej, min_size=2)
+        self.assertEqual(mezcla.loc["C0", "C0"], 1)   # arista interna de la comunidad 0
+        self.assertEqual(mezcla.loc["C1", "C1"], 1)   # arista interna de la comunidad 1
+        self.assertEqual(mezcla.loc["C0", "C1"], 1)   # puente entre las comunidades
+        self.assertEqual(mezcla.loc["C1", "C0"], 1)   # la matriz es simétrica
+
 
 class ClusteringTests(unittest.TestCase):
     def test_kmeans_dbscan_and_summary(self):
@@ -88,6 +99,41 @@ class RecommenderTests(unittest.TestCase):
         self.assertAlmostEqual(recommenders.recall_at_k(rel, 2, 2), 0.5)
         self.assertGreater(recommenders.ndcg_at_k(rel, 4), 0.9)
         self.assertAlmostEqual(recommenders.rmse([1, 3], [1, 1]), np.sqrt(2))
+
+    def test_score_switching(self):
+        # CF con señal -> se usa CF (no degrada a los usuarios warm)
+        np.testing.assert_array_equal(
+            recommenders.score_switching([0.0, 1.0, 0.0], [9.0, 9.0, 9.0], [5.0, 5.0, 5.0]),
+            [0.0, 1.0, 0.0],
+        )
+        # CF sin señal, content con señal -> se usa content
+        np.testing.assert_array_equal(
+            recommenders.score_switching([0.0, 0.0, 0.0], [0.0, 2.0, 0.0], [5.0, 5.0, 5.0]),
+            [0.0, 2.0, 0.0],
+        )
+        # CF y content sin señal -> fallback a popularidad
+        np.testing.assert_array_equal(
+            recommenders.score_switching([0.0, 0.0], [0.0, 0.0], [3.0, 7.0]),
+            [3.0, 7.0],
+        )
+
+    def test_ndcg_sin_sesgo_de_orden_de_candidatos(self):
+        # Artefacto "positivos-primero": si los candidatos se arman con los positivos
+        # al frente y un modelo sin señal da scores empatados, un desempate estable
+        # los deja arriba e infla el NDCG (peor caso). Barajar el orden de los
+        # candidatos lo corrige sea cual sea la política de desempate de argsort.
+        rel = np.array([1, 1] + [0] * 98)          # 2 positivos, luego 98 negativos
+        scores = np.zeros(len(rel))                 # modelo sin señal: todo empatado
+        ndcg_estable = recommenders.ndcg_at_k(rel[np.argsort(-scores, kind="stable")], 10)
+        self.assertAlmostEqual(ndcg_estable, 1.0)   # artefacto: NDCG=1.0 sin merecerlo
+
+        rng = np.random.default_rng(0)
+        barajados = [
+            recommenders.ndcg_at_k(
+                rel[p := rng.permutation(len(rel))][np.argsort(-scores[p], kind="stable")], 10)
+            for _ in range(300)
+        ]
+        self.assertLess(np.mean(barajados), 0.5)    # con barajado cae a nivel de azar
 
 
 class StreamingTests(unittest.TestCase):
