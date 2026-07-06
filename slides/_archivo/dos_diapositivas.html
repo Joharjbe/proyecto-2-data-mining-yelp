@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yelp Data Mining — Diapositivas negocio y técnica</title>
+<style>
+  :root{
+    --ink:#111827;          /* texto fuerte */
+    --ink-2:#4b5563;        /* texto secundario (gris_oscuro) */
+    --ink-3:#9ca3af;        /* texto tenue (gris) */
+    --azul:#2563eb;         /* Philadelphia */
+    --amber:#f59e0b;        /* Tampa */
+    --rojo:#dc2626;
+    --bar-muted:#d1d5db;
+    --hair:#e5e7eb;
+    --hair-2:#eef0f3;
+    --page:#f3f4f6;
+    --sans:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--page);color:var(--ink);font-family:var(--sans);
+    -webkit-font-smoothing:antialiased}
+  .deck{display:flex;flex-direction:column;align-items:center;gap:30px;padding:34px 16px 64px}
+
+  /* frame reserva el alto correcto; el slide se escala dentro (JS fija --s) */
+  .frame{width:min(1280px,94vw);aspect-ratio:1280/720}
+  .slide{
+    width:1280px;height:720px;background:#fff;position:relative;
+    border:1px solid var(--hair);box-shadow:0 1px 0 rgba(17,24,39,.04);
+    padding:48px 64px 48px;overflow:hidden;
+    transform-origin:top left;transform:scale(var(--s,1));
+  }
+
+  /* ---- cabecera común ---- */
+  .kicker{font-size:14px;letter-spacing:.04em;color:var(--ink-3);text-transform:uppercase;
+    font-weight:600;margin:0 0 14px}
+  .kicker b{color:var(--ink-2);font-weight:700}
+  h1.title{font-size:29px;line-height:1.22;font-weight:700;margin:0;max-width:1130px;
+    letter-spacing:-.012em}
+  h1.title .hl-red{color:var(--rojo)}
+  h1.title .hl-blue{color:var(--azul)}
+  h1.title .hl-amber{color:var(--amber)}
+  .foot{position:absolute;left:64px;right:64px;bottom:26px;display:flex;justify-content:space-between;
+    align-items:center;font-size:13px;color:var(--ink-3);border-top:1px solid var(--hair-2);padding-top:12px}
+  .foot .src{font-family:var(--mono);font-size:12.5px}
+  .pageno{font-variant-numeric:tabular-nums}
+
+  /* ================= SLIDE 1 · NEGOCIO ================= */
+  .s1-body{display:grid;grid-template-columns:1.28fr 1fr;gap:52px;margin-top:26px;height:454px}
+  .chart-wrap{align-self:start}
+  .chart-sub{font-size:14.5px;color:var(--ink-2);margin:0 0 8px}
+  .chart-sub .sim{color:var(--ink-3)}
+  svg{display:block;width:100%;height:auto}
+  .bar-val{font:700 20px var(--sans);fill:var(--ink)}
+  .bar-val.mute{fill:var(--ink-3);font-weight:600}
+  .qx{font:700 16px var(--sans);fill:var(--ink)}
+  .qsub{font:400 12.5px var(--sans);fill:var(--ink-3)}
+  .ytick{font:400 12px var(--sans);fill:var(--ink-3)}
+  .caption{font-size:13px;color:var(--ink-3);margin:14px 2px 0;line-height:1.45}
+
+  .s1-side{display:flex;flex-direction:column;gap:18px;padding-top:4px}
+  .lead{font-size:17.5px;line-height:1.5;color:var(--ink);margin:0}
+  .lead b{color:var(--rojo)}
+  .insights{list-style:none;margin:2px 0 0;padding:0;display:flex;flex-direction:column;gap:15px}
+  .insights li{position:relative;padding-left:18px;font-size:15px;line-height:1.5;color:var(--ink-2)}
+  .insights li::before{content:"";position:absolute;left:0;top:9px;width:7px;height:7px;background:var(--ink-3)}
+  .insights li b{color:var(--ink);font-weight:700}
+  .reco{margin-top:auto;border-left:3px solid var(--rojo);padding:12px 0 12px 16px}
+  .reco .lbl{font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--rojo);
+    font-weight:700;margin:0 0 5px}
+  .reco p{margin:0;font-size:16px;line-height:1.45;color:var(--ink)}
+
+  /* ================= SLIDE 2 · TÉCNICA ================= */
+  .pipe{font-family:var(--mono);font-size:14px;color:var(--ink-2);background:#fafbfc;
+    border:1px solid var(--hair);padding:12px 16px;margin:24px 0 26px;line-height:1.5;letter-spacing:-.01em}
+  .pipe .n{color:var(--ink);font-weight:600}
+  .pipe .arw{color:var(--ink-3);padding:0 6px}
+  .s2-body{display:grid;grid-template-columns:1.15fr 1fr;gap:48px}
+  table.cmp{border-collapse:collapse;width:100%;font-size:15.5px}
+  table.cmp caption{text-align:left;font-size:14px;color:var(--ink-2);margin-bottom:10px;font-weight:600}
+  table.cmp th{text-align:right;font-weight:600;color:var(--ink-3);font-size:13.5px;
+    padding:0 0 10px;border-bottom:1px solid var(--hair)}
+  table.cmp th:first-child{text-align:left}
+  table.cmp td{padding:13px 0;border-bottom:1px solid var(--hair-2);text-align:right;
+    font-variant-numeric:tabular-nums;color:var(--ink-2)}
+  table.cmp td:first-child{text-align:left;color:var(--ink);font-weight:600}
+  table.cmp tr:last-child td{border-bottom:none}
+  .cell-hi{font-weight:800}
+  .cell-hi.blue{color:var(--azul)}
+  .cell-hi.amber{color:var(--amber)}
+  .tnote{font-size:13.5px;color:var(--ink-3);margin:14px 2px 0;line-height:1.5}
+  .tnote b{color:var(--ink-2)}
+
+  .s2-side{display:flex;flex-direction:column;gap:22px}
+  .block h3{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);
+    margin:0 0 10px;font-weight:700}
+  .block ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}
+  .block li{position:relative;padding-left:17px;font-size:14.5px;line-height:1.45;color:var(--ink-2)}
+  .block li::before{content:"";position:absolute;left:0;top:8px;width:6px;height:6px;background:var(--ink-3)}
+  .block.lim li::before{background:var(--rojo);opacity:.85}
+  .block li b{color:var(--ink);font-weight:700}
+  .next{border-left:3px solid var(--azul);padding:11px 0 11px 16px;margin-top:2px}
+  .next .lbl{font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--azul);
+    font-weight:700;margin:0 0 5px}
+  .next p{margin:0;font-size:15.5px;line-height:1.45;color:var(--ink)}
+
+  @media print{
+    @page{size:1280px 720px;margin:0}
+    body,.deck{background:#fff;gap:0;padding:0}
+    .frame{width:1280px;aspect-ratio:auto}
+    .slide{border:none;box-shadow:none;page-break-after:always;transform:none}
+  }
+</style>
+</head>
+<body>
+<div class="deck">
+
+  <!-- =============================================================== -->
+  <!-- SLIDE 1 · NEGOCIO                                                -->
+  <!-- =============================================================== -->
+  <div class="frame"><section class="slide" id="slide-negocio">
+    <p class="kicker"><b>Parte VII</b> — Confianza en las reseñas</p>
+    <h1 class="title">Cinco reseñas falsas suben <span class="hl-red">+0.56&#9733;</span> a un restaurante con pocas reseñas,<br>y solo +0.03&#9733; a uno con muchas</h1>
+
+    <div class="s1-body">
+      <!-- gráfica -->
+      <div class="chart-wrap">
+        <p class="chart-sub">Cambio en la mediana de estrellas al inyectar 5 reseñas de 5&#9733;
+          <span class="sim">· simulación de estrés, por nº de reseñas del negocio</span></p>
+        <svg viewBox="0 0 600 300" role="img" aria-label="Barras: Q1 mas 0.56, Q2 mas 0.27, Q3 mas 0.11, Q4 mas 0.03 estrellas">
+          <!-- baseline (valor 0) -->
+          <line x1="70" y1="250" x2="575" y2="250" stroke="#e5e7eb" stroke-width="1"/>
+          <!-- gridlines punteadas -->
+          <g stroke="#eef0f3" stroke-width="1" stroke-dasharray="4 4">
+            <line x1="70" y1="180" x2="575" y2="180"/>
+            <line x1="70" y1="110" x2="575" y2="110"/>
+            <line x1="70" y1="40"  x2="575" y2="40"/>
+          </g>
+          <g class="ytick" text-anchor="end">
+            <text x="58" y="254">0</text>
+            <text x="58" y="184">+0.2</text>
+            <text x="58" y="114">+0.4</text>
+            <text x="58" y="44">+0.6</text>
+          </g>
+          <!-- barras (baseline y=250; escala 350 px/estrella) -->
+          <rect x="97"  y="54"    width="70" height="196"  rx="4" fill="#dc2626"/>
+          <text class="bar-val" x="132" y="42"  text-anchor="middle">+0.56&#9733;</text>
+
+          <rect x="222" y="155.5" width="70" height="94.5" rx="4" fill="#d1d5db"/>
+          <text class="bar-val mute" x="257" y="143.5" text-anchor="middle">+0.27</text>
+
+          <rect x="347" y="211.5" width="70" height="38.5" rx="4" fill="#d1d5db"/>
+          <text class="bar-val mute" x="382" y="199.5" text-anchor="middle">+0.11</text>
+
+          <rect x="472" y="239.5" width="70" height="10.5" rx="4" fill="#d1d5db"/>
+          <text class="bar-val mute" x="507" y="227.5" text-anchor="middle">+0.03</text>
+          <!-- x labels -->
+          <g text-anchor="middle">
+            <text class="qx" x="132" y="273">Q1</text><text class="qsub" x="132" y="290">menos reseñas</text>
+            <text class="qx" x="257" y="273">Q2</text>
+            <text class="qx" x="382" y="273">Q3</text>
+            <text class="qx" x="507" y="273">Q4</text><text class="qsub" x="507" y="290">más reseñas</text>
+          </g>
+        </svg>
+        <p class="caption">n &#8776; 7,300 restaurantes por cuartil. Yelp no publica etiqueta de spam:
+          se mide la vulnerabilidad estructural, no fraude detectado.</p>
+      </div>
+
+      <!-- interpretación + insights + recomendación -->
+      <div class="s1-side">
+        <p class="lead">Un restaurante con pocas reseñas no tiene masa que amortigüe: 5 reseñas falsas
+          le mueven <b>media estrella</b>; uno consolidado apenas se inmuta.</p>
+        <ul class="insights">
+          <li><b>El ataque también sabotea.</b> 5 reseñas de 1&#9733; bajan &#8722;0.88&#9733; al Q1
+            y solo &#8722;0.07&#9733; al Q4 — sirve para inflar o para hundir a un competidor pequeño.</li>
+          <li><b>El local frágil es el peor documentado.</b> En los ZIP de menor ingreso: mediana de
+            25 reseñas y 21.2% de atributos faltantes, frente a 38 y 17.9% en los de mayor ingreso.</li>
+        </ul>
+        <div class="reco">
+          <p class="lbl">Qué hacer</p>
+          <p>Con pocas reseñas, no mostrar el promedio crudo: ponderar por confiabilidad del
+            reseñador y marcar ráfagas atípicas.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <span class="src">notebook 10 · stress_spam_ratings (celdas 18 y 21)</span>
+      <span class="pageno">1 / 2</span>
+    </div>
+  </section></div>
+
+  <!-- =============================================================== -->
+  <!-- SLIDE 2 · TÉCNICA                                               -->
+  <!-- =============================================================== -->
+  <div class="frame"><section class="slide" id="slide-tecnica">
+    <p class="kicker"><b>Parte IV</b> — Recomendación híbrida</p>
+    <h1 class="title">Evaluación temporal sin fuga: el <span class="hl-blue">top-popular</span> lidera precisión,
+      el <span class="hl-amber">CF</span> lidera cobertura, y la validación elige el híbrido &#945;&#8776;0.5</h1>
+
+    <div class="pipe">
+      matriz usuario&#215;negocio <span class="n">(0.011% llena)</span>
+      <span class="arw">&#8594;</span> split temporal <span class="n">(train &#8804;2018 · val 2019 · test 2020-21)</span>
+      <span class="arw">&#8594;</span> <span class="n">CF item-item · TF-IDF · híbrido</span>
+      <span class="arw">&#8594;</span> NDCG / RMSE + cobertura
+    </div>
+
+    <div class="s2-body">
+      <!-- tabla comparativa -->
+      <div>
+        <table class="cmp">
+          <caption>Ranking sobre test — candidatos in-market barajados, evaluación única</caption>
+          <thead>
+            <tr><th>Modelo</th><th>NDCG@10</th><th>Cobertura</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Top-popular</td><td class="cell-hi blue">0.26</td><td>13%</td></tr>
+            <tr><td>Híbrido &#945;=.5</td><td>0.24</td><td>34%</td></tr>
+            <tr><td>Content TF-IDF</td><td>0.19</td><td>34%</td></tr>
+            <tr><td>CF item-item</td><td>0.18</td><td class="cell-hi amber">40%</td></tr>
+          </tbody>
+        </table>
+        <p class="tnote"><b>Rating (warm-warm):</b> baseline RMSE 1.24 &lt; CF 1.31 &lt; media &#956; 1.38.
+          &nbsp;·&nbsp; <b>&#945;</b> fijado en validación 2019 (0.5 &#8594; NDCG 0.244), antes de tocar test.</p>
+      </div>
+
+      <!-- experimentación + limitaciones + siguiente paso -->
+      <div class="s2-side">
+        <div class="block">
+          <h3>Experimentación</h3>
+          <ul>
+            <li><b>Sin fuga:</b> &#945; se fija en validación 2019; el test se evalúa una sola vez.</li>
+            <li><b>Candidatos barajados</b> in-market (94.8% de visitas en el mercado del usuario) para no premiar el orden.</li>
+            <li>Dos tracks: ranking (P/R/NDCG@10) y rating (RMSE/MAE).</li>
+          </ul>
+        </div>
+        <div class="block lim">
+          <h3>Limitaciones</h3>
+          <ul>
+            <li>Matriz al <b>0.011%</b>: el CF puro cae a NDCG <b>0.08</b> en cold-start (1-2 interacciones).</li>
+            <li>La precisión sola premia concentrar: el más preciso cubre solo <b>13%</b> del catálogo.</li>
+          </ul>
+        </div>
+        <div class="next">
+          <p class="lbl">Siguiente experimento</p>
+          <p>Reranking por exposición, evaluado con NDCG + cobertura + Gini (puente con la Parte VII).</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <span class="src">notebook 07 · recomendación híbrida (celdas 16–18)</span>
+      <span class="pageno">2 / 2</span>
+    </div>
+  </section></div>
+
+</div>
+
+<script>
+  // Escala cada slide para que quepa en su frame (mantiene 1280x720 nítido).
+  function fit(){
+    document.querySelectorAll('.frame').forEach(function(f){
+      var s = f.clientWidth / 1280;
+      f.querySelector('.slide').style.setProperty('--s', s);
+    });
+  }
+  window.addEventListener('resize', fit);
+  fit();
+</script>
+</body>
+</html>
